@@ -1,0 +1,20 @@
+# This playbook will build and secure a freshly-installed debian system and bootstrap
+# some default packages
+#
+# Vars needed: target
+---
+- hosts: '{{ target }}'
+  become: yes
+  gather_facts: true
+  vars_files:
+    - group_vars/bootstrap/defaults.yml
+  roles:
+    - install_base_pkgs
+    - deploy_unattended_upgrades
+    - create_users
+    - deploy_csf
+    - config_csf
+    - config_sudo
+    - config_sshd
+
+

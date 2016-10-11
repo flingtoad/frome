@@ -1,0 +1,38 @@
+# Role to install and configure sudoers
+#
+# Vars needed: none
+---
+- name: Check if sudo is installed.
+  apt: name={{ item }} state=present
+  with_items:
+    - sudo    
+  changed_when: true
+
+- name: Create a backup of the existing sudoers file.
+  command: cp -f /etc/sudoers /etc/sudoers.old
+  
+- name: Pushing default base config. All server specific configuration should be in /etc/sudoers.d.
+  copy:
+    src: sudoers
+    dest: /etc/sudoers
+    force: yes
+
+- name: Create a directory for system specific sudoers files.
+  file: path=/etc/sudoers.d state=directory
+
+- name: Ensure a README exists in /etc/sudoers.d.
+  copy:
+    src: sudoers.d/README
+    dest: /etc/sudoers.d/README
+    mode: 0440
+    force: yes
+
+- name: Check if sudoers file is valid.
+  command: /usr/sbin/visudo -c
+  register: visudo_check
+    
+- name: Revert to old file if visudo check fails.
+  command: cp /etc/sudoers.old /etc/sudoers
+  when: visudo_check.rc != 0
+
+  

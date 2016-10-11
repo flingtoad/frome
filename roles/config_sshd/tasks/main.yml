@@ -1,0 +1,20 @@
+# Lock down ssh a bit
+#
+# Vars needed:
+---
+- name: Lock down ssh if it is not already.
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backup: yes
+    backrefs: yes
+  with_items:
+    - { regexp: '^#?Port', line: 'Port 922' }
+    - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+    - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
+    - { regexp: '^#?PermitEmptyPasswords', line: 'PermitEmptyPasswords no' }
+    - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+
+- name: Restart ssh
+  service: name=ssh state=restarted enabled=yes

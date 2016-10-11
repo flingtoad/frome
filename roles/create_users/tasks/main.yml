@@ -1,0 +1,29 @@
+# Create necessary users
+#
+# Vars needed:
+---
+- name: Add new user to the server and add their home directory files
+  user:
+    name: '{{ item.name }}'
+    groups: '{{ item.groups }}'
+    password: '{{ item.password }}'
+    shell: /bin/bash
+    state: present
+  with_items:
+    - { name: '{{ user_create }}', groups: 'sudo', password: '{{ user_pass }}', shell: '/bin/bash' }
+
+- name: Sync home directories and keys for ansible user and sysadmins
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - { src: '{{ user_create }}/', dest: '/home/{{ user_create}}/' }
+
+- name: Adjusting permissions for synced content for user
+  file:
+    name: /home/{{ user_create }}
+    recurse: true
+    mode: 0700
+    owner: {{ user_create }}
+    group: {{ user_create }}
+

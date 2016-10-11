@@ -1,0 +1,76 @@
+# Role to apply our specific CSF rules. This role might be best combined with deploy_csf role.
+#
+# Vars needed: csf_config, csf_ignore_ips, csf_logs
+---
+- name: Check if csf is already installed.
+  command: csf -v
+  register: result
+  ignore_errors: true
+  changed_when: true
+
+# Check if we have a config for the specific server in a format csf.{{ ansible_env.HOME }} if not move on and install our generic config.
+- name: First attempt to push a server specific config if we have one.
+  copy:
+    src: 'csf.{{ ansible_hostname }}'
+    dest: /etc/csf/csf.conf
+    backup: yes
+  ignore_errors: true
+  register: csf_custom
+
+- name: If no server specific config was found, push our default rules.
+  copy:
+    src: csf.conf
+    dest: /etc/csf/csf.conf
+    force: yes
+    backup: yes
+  when: csf_custom|failed
+
+- name: Finally check if we have any server specific csf pre or post rules to add - Ex. NAT rules.
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  ignore_errors: true
+  with_items:
+    - { src: 'csfpre.{{ ansible_hostname}}', dest: '/etc/csf/csfpre.sh'}
+    - { src: 'csfpost.{{ ansible_hostname}}', dest: '/etc/csf/csfpost.sh'}
+
+- name: White list some internal ips
+  lineinfile:
+    dest: /etc/csf/csf.ignore
+    line: '{{ item }}'
+    state: present
+  with_items: '{{ csf_ignore_ips }}'
+
+- name: Check for the existence of the syslog log
+  stat:
+    path: /var/log/syslog
+  register: log_path_check_syslog
+
+- name: Check for the existence of the messages log
+  stat:
+    path: /var/log/messages
+  register: log_path_check_messages
+
+- name: Switch the log path to syslog if it exists otherwise leaves as default (messages)
+  lineinfile:
+    dest: /etc/csf/csf.conf
+    state: present
+    regexp: '{{ item }} = "/var/log/messages"'
+    line: '{{ item }} = "/var/log/syslog"'
+  with_items: "{{ csf_logs }}"
+  when: "log_path_check_syslog.stat.exists == True"
+
+- name: Check that csf/lfd are actually running first.
+  shell: csf -l | grep -o "disabled"
+  args:
+    executable: /bin/bash
+  register: csf_status
+  ignore_errors: True
+
+- name: Start csf if it is disabled.
+  command: csf -e
+  when: csf_status.stdout == "disabled"
+
+- name: If csf was already running restart it so a new config may take effect.
+  command: csf -r
+  when: csf_status.stdout == ""

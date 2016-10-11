@@ -1,0 +1,62 @@
+# Role to apply Bixly specific CSF rules. This role might be best combined with deploy_csf role.
+#
+# Vars needed: none
+---
+- name: Install some common packages
+  apt:
+    name: "{{ item }}"
+    state: installed
+    update_cache: yes
+  with_items:
+  - automake
+  - build-essential
+  - bzip2
+  - curl
+  - gcc
+  - git
+  - htop
+  - libpcre3
+  - libpcre3-dev
+  - libwww-perl
+  - libxslt1.1
+  - libxslt1-dev
+  - python-dev
+  - python-httplib2
+  - python-setuptools
+  - python-software-properties
+  - openssl
+  - libfreetype6-dev
+  - liblcms2-dev
+  - libwebp-dev
+  - libreadline6-dev
+  - libssl-dev
+  - libyaml-dev
+  - libsqlite3-dev
+  - libgmp-dev
+  - libncurses5-dev
+  - libtool
+  - python-tk
+  - screen
+  - sqlite3
+  - tcl8.5-dev
+  - tk8.5-dev
+  - zlib1g-dev
+  - checkinstall
+  - wget
+  - vim
+  - pwgen
+  - pass
+  - emacs24
+  - icedove
+  - firefox-esr
+  - terminator
+  - tmux
+
+- name: Fetch spideroak package
+  get_url:
+    dest: /tmp/spideroak.deb
+    url: https://spideroak.com/getbuild?platform=ubuntu&arch=x86_64
+    checksum: sha256:7ef458381c17f7a3712043aa672b5509500e7e6999cd52ba5d85ba76f7a29d2c
+
+- name: Install the spideroak package
+  command: dpkg -i /tmp/spideroak.deb

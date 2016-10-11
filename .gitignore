@@ -1,0 +1,3 @@
+restore_*/
+deploy_freeipa_client_test.yml
+group_vars/bootstrap/default.yml

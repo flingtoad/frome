@@ -1,0 +1,64 @@
+# Role to install CSF with a default bare config.
+#
+# Vars needed: none
+---
+- name: Check if csf is already installed.
+  command: csf -v
+  register: result
+  ignore_errors: true
+  changed_when: false
+
+- name: Fetch csf
+  get_url:
+    url: https://download.configserver.com/csf.tgz
+    dest: /tmp/csf.tgz
+  when: result|failed
+
+- name: Unpack the archive
+  unarchive:
+    src: /tmp/csf.tgz
+    dest: /tmp
+    copy: no
+  when: result|failed
+
+- name: Install package libwww-perl, libdg-graph-perl [Debian]
+  apt: name={{ item }} state=present
+  with_items:
+    - libwww-perl
+    - libgd-graph-perl
+    - ipset
+  when: "ansible_os_family == 'Debian'"
+
+- name: Install package perl-libwww-perl, libdg-graph-perl [RedHat]
+  yum: name={{ item }} state=present
+  with_items:
+    - perl-libwww-perl
+    - perl-GD
+    - ipset
+    - libselinux-python
+  when: "ansible_os_family == 'RedHat'"
+
+- name: Disable firewalld on [RedHat] and [CentOS7]
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+  when: "ansible_os_family == 'RedHat' and ansible_distribution_major_version == '7'"
+
+- name: Install package net-tools [RedHat]
+  yum: name=net-tools state=present
+  when: "ansible_os_family == 'RedHat' and ansible_distribution_major_version == '7'"
+
+- name: Install csf
+  command: sh install.sh
+  args:
+    chdir: /tmp/csf
+  when: result|failed
+
+- name: Cleanup csf files
+  command: rm -rf /tmp/csf
+  when: result|failed
+
+- name: Adjust SELinux user, role, and type of csf files
+  command: chcon -R --user=system_u --role=object_r --type=etc_t /etc/csf
+  when: "ansible_os_family == 'RedHat'"

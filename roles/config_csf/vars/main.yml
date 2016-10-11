@@ -1,0 +1,13 @@
+## These can possibly move to the "ALL" group_var or host_var.
+csf_ignore_ips:
+  - 8.8.8.8 
+csf_logs:
+  - SU_LOG
+  - FTPD_LOG
+  - IPTABLES_LOG
+  - SUHOSIN_LOG
+  - BIND_LOG
+  - SYSLOG_LOG
+csf_maillog:
+  - POP3D_LOG
+  - IMAPD_LOG

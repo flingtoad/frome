@@ -1,0 +1,17 @@
+# Install unattended upgrades and configure
+#
+# Vars needed:
+---
+- name: Make sure the unattended-upgrades package is installed.
+  apt: name=unattended-upgrades state=installed update_cache=yes
+
+- name: Configure unattended-upgrades to enable automatic security updates only.
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    backup: yes
+  with_items:
+    - { src: 'apt_periodic', dest: '/etc/apt/apt.conf.d/10periodic' }
+    - { src: 'apt_auto_upgrades', dest: '/etc/apt/apt.conf.d/20auto-upgrades' }
+    - { src: 'apt_unattended_upgrades', dest: '/etc/apt/apt.conf.d/50unattended-upgrades' }
+
